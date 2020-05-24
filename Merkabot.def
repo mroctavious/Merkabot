@@ -1,11 +1,10 @@
 bootstrap: library
 From: ubuntu:18.04
 
-
 %post
 	##Instalacion dependencias Python, MySQL
 	apt-get -y update
-	apt-get -y install python3 mysql-server curl python3-distutils
+	apt-get -y install python3 curl python3-distutils
 
 	##Folder temporal para crear la instalacion
 	buildFolder=$(mktemp)
@@ -19,6 +18,8 @@ From: ubuntu:18.04
 	##Instalacion de pip
 	python3 get-pip.py
 	pip3 install Telebot
+	pip3 install pymysql
+	pip3 install flask-restful
 
 
 %environment

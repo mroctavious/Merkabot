@@ -1,4 +1,8 @@
 import telebot
+from traducciones import DICCIONARIO
+from telebot import types
+
+idioma="en"
 
 ##This function will read configuration file and set the options for the program to work
 #config options can be defined by the user during runtime
@@ -21,22 +25,70 @@ config=readConfigFile("Merkabot.cfg")
 ##Starting the bot
 bot = telebot.TeleBot(config['BOT_TOKEN'])
 
+#functions for /subProduct
 
-@bot.message_handler(commands=['start', 'help'])
-def pko(message):
-    bot.reply_to(message, "Hola Pi pi pi Pita")
+def getProductCost(message, product_name, product_description):
+    product_cost = message.text
+    bot.reply_to(message, DICCIONARIO['cost_will_show'][idioma] + ": " + product_cost + "\n")
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add(DICCIONARIO['res_positiva'][idioma], DICCIONARIO['res_negativa'][idioma])
+    bot.send_message(message.chat.id, DICCIONARIO['estas_seguro'][idioma] + "\n", reply_markup=markup)
+    bot.register_next_step_handler(message, verifyProductCost, product_name, product_description, product_cost)
 
-#/ubi
-@bot.message_handler(commands=['ubi'])
-def ubica(message):
-    bot.send_location(message.chat.id, 20.618217, -100.397134)
+def verifyProductCost(message, product_name, product_description, product_cost):
+    if message.text == DICCIONARIO['res_positiva'][idioma]:
+        bot.reply_to(message, "TERMINAMOS :D")
+        #bot.reply_to(message, DICCIONARIO['foto'][idioma]) agregar foto
+        #bot.register_next_step_handler(message, getProductCost, product_name, product_description)
+    else:
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        markup.add(DICCIONARIO['res_positiva'][idioma], DICCIONARIO['res_negativa'][idioma])
+        bot.reply_to(message, DICCIONARIO['cam_prod_cost'][idioma], reply_markup=markup) 
+        bot.register_next_step_handler(message, verifyProductDescription, product_name, product_description )
 
-# sendLocation
-#20.618217, -100.397134
-#tb.send_location(chat_id, lat, lon) 
+def verifyProductDescription(message, product_name, product_description):
+    if message.text == DICCIONARIO['res_positiva'][idioma]:
+        bot.reply_to( message, DICCIONARIO['ingresa_cost'][idioma] )
+        bot.register_next_step_handler(message, getProductCost, product_name, product_description)
+        #bot.reply_to(message, DICCIONARIO['ingresa_descri'][idioma])
+    else:
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        markup.add(DICCIONARIO['res_positiva'][idioma], DICCIONARIO['res_negativa'][idioma])
+        bot.reply_to(message, DICCIONARIO['cam_prod_descrip'][idioma], reply_markup=markup) 
+        bot.register_next_step_handler(message, getAnswerProductDescrip, product_name )
 
-    
+def getProductDescription(message, product_name):
+    product_description = message.text
+    bot.reply_to(message, DICCIONARIO['aparecera_asi'][idioma] + ":\n\n" + product_description)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add(DICCIONARIO['res_positiva'][idioma], DICCIONARIO['res_negativa'][idioma])
+    bot.send_message(message.chat.id, DICCIONARIO['estas_seguro'][idioma] + "\n", reply_markup=markup)
+    bot.register_next_step_handler(message, verifyProductDescription, product_name, product_description)
 
+
+def getAnswerProductDescrip(message, product_name):
+    if message.text == DICCIONARIO['res_positiva'][idioma]:
+        bot.reply_to(message, DICCIONARIO['ingresa_descri'][idioma])
+        bot.register_next_step_handler(message, getProductDescription, product_name)
+        #llevar a la siguiente function
+    else:
+        #adios!
+        bot.reply_to(message, DICCIONARIO['despedida'][idioma])
+
+def printAndVerifyProductName(message):
+    product_name = message.text
+    bot.reply_to(message, DICCIONARIO['aparecera_asi'][idioma] + ":\n\n" + product_name )
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add(DICCIONARIO['res_positiva'][idioma], DICCIONARIO['res_negativa'][idioma])
+    bot.send_message(message.chat.id, DICCIONARIO['estas_seguro'][idioma] + "\n", reply_markup=markup)
+    bot.register_next_step_handler(message, getAnswerProductDescrip, product_name)
+
+
+#Command /SubProduct
+@bot.message_handler(commands=['subproduct'])
+def productStart(message):
+    bot.reply_to(message, DICCIONARIO['ingresa_prod'][idioma] + "\n")
+    bot.register_next_step_handler(message, printAndVerifyProductName)
 
 ##Ejecutar el bot
 bot.polling()
